@@ -7,11 +7,10 @@
 #include<unistd.h>
 #include<stdlib.h>
 #include<string.h>
+#include<wait.h>
 
 int main()
 {
-
-
   while(1)
   {
     char cmd[1024] = {0};
@@ -27,9 +26,47 @@ int main()
       getchar();
     }
     //scanf("%[^\n]%*s", cmd);
-      printf("cmd:[%s]\n", cmd);
+    printf("cmd:[%s]\n", cmd);
+    char* ptr = cmd;
+    char* argv[32] = {NULL};
+    int argc = 0;
+    while(*ptr != '\0')
+    {
+      if(!isspace(*ptr))
+      {
+        argv[argc++] = ptr;;
+        while(!isspace(*ptr) && *ptr != '\0')
+        {
+          ptr++;
+        }
+        continue;
+      }
+      else
+      {
+        *ptr = '\0';
+      }
+      ptr++;
+    }
+    int i;
+    for(i = 0; i < argc; i++)
+    {
+      printf("[%d]-[argv:[%s]]\n",i,argv[i]);
+    }
+
+    int pid = fork();
+    if(pid < 0)
+    {
+      exit(-1);
+    }
+    else if(pid == 0)
+    {
+      execvp(argv[0], argv);
+      exit(-1);
+    }
+    else
+    {
+      waitpid(pid, NULL, 0);
+    }
   }
-
-
   return 0;
 }
