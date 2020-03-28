@@ -1,0 +1,6 @@
+升级 高版本 gcc
+# 先获取 root 权限
+yum install centos-release-scl-rh centos-release-scl
+yum check-update
+yum install devtoolset-4-gcc  devtoolset-4-gcc-c++
+source /opt/rh/devtoolset-4/enable (这个可以放到 ~/.bashrc 里,否则每次登陆和打开新终端都需要运行命令重新加载配置)
