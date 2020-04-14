@@ -47,7 +47,18 @@ class DataManage
         1. 文件上传请求处理接口
         2. 文件列表请求处理接口
         3. 文件下载请求处理接口
-
+class HttpServer
+{
+  public:
+    bool Start(); // 开始搭建HTTP服务器, 进行业务处理
+  private:
+    static void FileUpLoad(const httplib::Request &req; httplib::Response &rsp);  // 文件上传请求的回调处理函数
+    static void FileList(const httplib::Request &req, httplib::Response &rsp);  // 文件列表请求的回调处理函数
+    static void FileDownLoad(const httplib::Request &req, httplib::Response &rsp);  // 文件下载请求的回调处理函数
+  private:
+    std::string _file_dir;  // 上传文件的存放路径
+    httplib::Server _server; // 搭建http服务器的对象
+}
   客户端:
     1.数据管理模块
     2.目录监控模块
