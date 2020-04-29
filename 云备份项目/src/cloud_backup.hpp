@@ -140,35 +140,101 @@ namespace _cloud_sys
         return true;
       }
   };
+  // 数据管理模块
   class DataManger
   {
     public:
       DataManger()
       {
+        pthread_rwlock_init(&_rwlock, NULL);
 
       }
       ~DataManger()
       {
+        pthread_rwlock_destroy(&_rwlock);
 
       }
       // 判断文件是否存在
-      bool Exists(const std::string &name);
+      bool Exists(const std::string &name)
+      {
+        // 是否能够从 _file_list 中找到这个文件信息
+        pthread_rwlock_rdlock(&_rwlock);
+        auto it = _file_list.find(name);
+        if(it == _file_list.end())
+        {
+          pthread_rwlock_unlock(&_rwlock);
+          return false;
+        }
+        pthread_rwlock_unlock(&_rwlock);
+        return true;
+
+      }
       // 判断文件是否被压缩
-      bool IsCompress(const std::string &name);
-      // 获取未压缩文件
-      bool NonCompressList(std::vector<std::string> *list);  
+      bool IsCompress(const std::string &name)
+      {
+        // 管理的数据: 源文件名称-压缩包名称
+        // 文件上传后: 源文件名称和压缩包名称一致
+        // 文件压缩后: 将压缩包名称更新为具体的包名
+        pthread_rwlock_rdlock(&_rwlock);
+        auto it = _file_list.find(name);
+        if(it == _file_list.end())
+        {
+          pthread_rwlock_unlock(&_rwlock);
+          return false;
+        }
+        // 如果两个名称一致, 则表示未压缩
+        if(it->first == it->second)
+        {
+          pthread_rwlock_unlock(&_rwlock);
+          return false;
+        }
+        pthread_rwlock_unlock(&_rwlock);
+        return true;
+
+      }
+      // 获取未压缩文件列表
+      bool NonCompressList(std::vector<std::string> *list)
+      {
+        // 遍历 _file_list 将没有压缩的文件名称添加到list中
+        pthread_rwlock_rdlock(&_rwlock);
+        auto it = _file_list.begin();
+        for(;it != _file_list.end(); ++it)
+        {
+          if(it->first == it->second)
+          {
+            pthread_rwlock_unlock(&_rwlock);
+            list->push_back(it->first);
+          }
+        }
+        pthread_rwlock_unlock(&_rwlock);
+        return true;
+      }
       // 插入/更新数据
-      bool Insert(const std::string &src, const std::string &dst); 
+      bool Insert(const std::string &src, const std::string &dst)
+      {
+        return true;
+      }
       // 获取所有文件名称
-      bool GetAllName(std::vector<std::string> *list); 
+      bool GetAllName(std::vector<std::string> *list)
+      {
+        return true;
+      }
       // 数据改变后持久化存储
-      bool Storage();  
+      bool Storage()
+      {
+        return true;
+      }
       // 启动时初始化加载原有数据
-      bool InitLoad();  
+      bool InitLoad()
+      {
+        return true;
+      }
     private:
       // 持久化数据存储文件名称
       std::string _back_file; 
       // 数据管理器
+      // 由于 _file_list 是一个临界资源,网络通信模块和数据管理模块都在使用,
+      // 所以为了线程安全,需要在每次访问前加锁,访问结束后解锁
       std::unordered_map<std::string, std::string> _file_list;  
       pthread_rwlock_t _rwlock;
   };
