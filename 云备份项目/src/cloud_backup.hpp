@@ -212,21 +212,56 @@ namespace _cloud_sys
       // 插入/更新数据
       bool Insert(const std::string &src, const std::string &dst)
       {
+        // 更新修改需要加写锁
+        pthread_rwlock_wrlock(&_rwlock);
+        _file_list[src] = dst;
+        pthread_rwlock_unlock(&_rwlock);
+        
         return true;
       }
-      // 获取所有文件名称
+      // 获取所有文件名称,向外显示文件列表使用
       bool GetAllName(std::vector<std::string> *list)
       {
+        // 加 读锁
+        pthread_rwlock_rdlock(&_rwlock);
+        auto it = _file_list.begin();
+        for(; it != _file_list.end(); ++it)
+        {
+          // 获取的是源文件名称
+          list->push_back(it->first);
+        }
+        pthread_rwlock_unlock(&_rwlock);
         return true;
       }
       // 数据改变后持久化存储
+      // 存储的是管理的文件名数据
       bool Storage()
       {
+        // 将 _file_list 中的数据进行持久化存储
+        // 数据对象进行持久化存储-----序列化
+        // 每个数据占据一行 每一行的格式: src dst\r\n
+        std::stringstream tmp; // 实例化一个string流对象
+        pthread_rwlock_rdlock(&_rwlock);
+        auto it = _file_list.begin();
+        for(; it != _file_list.end(); ++it)
+        {
+          // 序列化---按照指定格式组织数据
+          tmp << it->first << " " << it->second << "\r\n";
+        }
+        pthread_rwlock_unlock(&_rwlock);
+        // 将数据备份到文件中
+        FileUtil::Write(_back_file, tmp.str());
+
         return true;
       }
       // 启动时初始化加载原有数据
+      // filename gzfilename\r\n filename gzfilename\r\n...
       bool InitLoad()
       {
+        // 从数据的持久化存储文件中加载数据
+        // 57分钟
+        // 
+        // 
         return true;
       }
     private:
