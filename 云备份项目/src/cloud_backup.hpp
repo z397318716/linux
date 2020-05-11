@@ -8,9 +8,16 @@
 #include <iostream>
 #include <boost/filesystem.hpp>
 #include "httplib.h"
+#include <boost/algorithm/string.hpp>
 
 namespace _cloud_sys
 {
+#define NONHOT_TIME 10   // 基准时间 (如果当前时间减去最后一次操作的时间大于该基准值,则认为该文件为非热点文件)
+#define INTERVAL_TIME 30 // 非热点文件的检测间隔(30秒一次)
+#define BACKUP_DIR "./backup/"  // 文件的备份路径 
+#define GZFILE_DIR "./gzfile/"  // 压缩包存放路径
+#define DATA_FILE "./list.backup" // 数据管理模块的数据备份文件名称
+  DataManager data_manage(DATA_FILE);
   class FileUtil 
   {
     public:
@@ -141,10 +148,12 @@ namespace _cloud_sys
       }
   };
   // 数据管理模块
+  // 这个模块可以使用数据库来代替
   class DataManger
   {
     public:
-      DataManger()
+      DataManger(const std::string &path):
+        _back_file(path)
       {
         pthread_rwlock_init(&_rwlock, NULL);
 
@@ -216,7 +225,8 @@ namespace _cloud_sys
         pthread_rwlock_wrlock(&_rwlock);
         _file_list[src] = dst;
         pthread_rwlock_unlock(&_rwlock);
-        
+        // 更新修改之后, 重新备份
+        Storage();
         return true;
       }
       // 获取所有文件名称,向外显示文件列表使用
@@ -255,13 +265,37 @@ namespace _cloud_sys
         return true;
       }
       // 启动时初始化加载原有数据
-      // filename gzfilename\r\n filename gzfilename\r\n...
+      // 格式:  filename gzfilename\r\n filename gzfilename\r\n...
       bool InitLoad()
       {
         // 从数据的持久化存储文件中加载数据
-        // 57分钟
-        // 
-        // 
+        // 1. 将这个备份文件的数据读取出来
+        std::string body;
+        if(FileUtil::Read(_back_file, &body) == false)
+        {
+          return false;
+        }
+
+        // 2. 进行字符串处理, 按照/r/n 进行分割
+        // boost::split(vector, src, sep, flag) 
+        // vector: 分割后的字符串存放位置 src:源字符串 sep:遇到sep字符便分割
+        std::vector<std::string> list;
+        boost::split(list, body, boost::is_any_of("\r\n"), boost::token_compress_off);
+        // 3. 每一行按照空格进行分割-----前面是key, 后面是val
+        for(auto i : list)
+        {
+          size_t pos = i.find(" ");
+          if(pos == std::string::npos)
+          {
+            continue;
+          }
+          std::string key = i.substr(0, pos);
+          std::string val = i.substr(pos+1);
+          
+        
+          // 4. 将 key/val 添加到 _file_list 中
+          Insert(key, val);
+        }
         return true;
       }
     private:
@@ -273,19 +307,53 @@ namespace _cloud_sys
       std::unordered_map<std::string, std::string> _file_list;  
       pthread_rwlock_t _rwlock;
   };
+  // 非热点文件压缩
   class NonHotCompress
   {
     public:
-      NonHotCompress()
+      NonHotCompress(const std::string dir_name):
+        _gz_dir(dir_name)
       {
-
       }
       ~NonHotCompress()
       {
 
       }
       // 总体向外提供的功能接口, 开始压缩模块
-      bool Start(); 
+      bool Start()
+      {
+        // 是一个循环的, 持续的的过程--每隔一段时间, 判断有没有非热点文件,然后进行压缩
+        // 问题: 什么文件是非热点文件
+        // ----当前时间减去最后一次访问时间 > 基准时间(我们自定义的一个阈值时间)
+        while(1)
+        {
+          // 1.获取所有的未压缩文件列表
+          std::vector<std::string> list;
+          data_manage.NonCompressList(&list);
+          // 2.逐个判断当前文件是否是热点文件
+          for(int i = 0; i < list.size(); i++)
+          {
+            bool ret = FileIsHot(list[i]);
+            if(ret == false)
+            {
+              // 源文件名称
+              std::string src_name = BACKUP_DIR + list[i];
+              std::string dst_name = GZFILE_DIR + list[i]; + ".gz";
+            
+              // 3.如果是非热点文件, 则压缩这个文件, 删除源文件
+              if(CompressUtil::Compress(src_name, dst_name) == true)
+              {
+                // 更新数据信息
+                data_manage.Insert();
+                // unlink 删除一个文件的目录项
+                unlink(src_name.c_str());
+              }
+            }
+          }
+          sleep(INTERVAL_TIME);
+        }
+        return true;
+      }
     private:
       // 判断一个文件是否是热点文件
       bool FileIsHot(const std::string &name);  
