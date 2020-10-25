@@ -24,5 +24,21 @@ int main()
     perror("open failed!");
   }
   printf("open fifo success\n");
+
+  while(1){
+    char buf[1024] = {0};
+    int ret = read(fd, buf, 1023);
+    if(ret < 0){
+      perror("read error!");
+      return -1;
+    }
+    else if(ret == 0){
+      perror("all write closed!");
+      return -1;
+    }
+    printf("read buf:[%s]\n", buf);
+  }
+  close(fd);
+
   return 0;
 }

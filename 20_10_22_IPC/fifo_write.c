@@ -7,6 +7,7 @@
 #include<sys/stat.h>
 #include<errno.h>
 #include<fcntl.h>
+#include<string.h>
 
 int main()
 {
@@ -18,11 +19,19 @@ int main()
     perror("mkfifo error!");
   }
 
-  int fd = open("./test.fifo", O_RDONLY);
+  int fd = open("./test.fifo", O_WRONLY);
   if(fd < 0)
   {
     perror("open failed!");
   }
   printf("open fifo success!\n");
+  int i = 0;
+  while(1){
+    char buf[1024] = {0};
+    sprintf(buf, "我真的好菜啊!-%d", ++i);
+    write(fd, buf, strlen(buf));
+    sleep(1);
+  }
+  close(fd);
   return 0;
 }
