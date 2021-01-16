@@ -1,3 +1,11 @@
+all:client server communicate
+communicate:communicate.c
+	gcc $^ -o $@
+client:client.c
+	gcc $^ -o $@
+server:server.c
+	gcc $^ -o $@
+
 shm_write:shm_write.c
 	gcc $^ -o $@
 shm_read:shm_read.c
