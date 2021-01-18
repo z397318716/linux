@@ -19,7 +19,7 @@ int main()
   signal(SIGINT, sigcb);
   while(1){
     printf("我好冷啊!!!\n");
-    sleep(10);
+    sleep(1);
   }
 
 
