@@ -60,6 +60,28 @@ class BlockQueue{
     pthread_cond_t _customer_cond; // 消费者队列
     //
 };
+void *thr_productor(void *arg){
+  BlockQueue *queue = (BlockQueue*)arg;
+  int i = 0;
+  while(1){
+    // 生产者不断生产数据
+    queue->Push(i);
+    i++;
+    printf("productor push data:%d\n", i);
+  }
+  return NULL;
+}
+void *thr_customer(void *arg){
+  BlockQueue *queue = (BlockQueue*)arg;
+
+  while(1){
+    // 消费者不断的获取数据进行处理
+    int data;
+    queue->Pop(&data);
+    printf("customer pop data:%d\n", data);
+  }
+  return NULL;
+}
 int main(){
 
   int ret, i;
@@ -80,8 +102,8 @@ int main(){
 
   }
   for(i = 0; i < 4; ++i){
-    pthread_join(&ptid[i], NULL);
-    pthread_join(&ctid[i], NULL);
+    pthread_join(ptid[i], NULL);
+    pthread_join(ctid[i], NULL);
   }
 
   return 0;
