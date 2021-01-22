@@ -1,3 +1,5 @@
+main:main.cpp pthread_pool.hpp
+	g++ -std=c++11 $^ -o $@ -lpthread
 product_customer2:product_customer2.cpp
 	g++ -std=c++11 $^ -o $@ -lpthread
 product_customer:product_customer.cpp
