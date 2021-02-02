@@ -12,6 +12,7 @@
  * 7. 接收数据
  * 8. 关闭套接字*/
 #include<iostream>
+#include<unistd.h>
 #include<string>
 #include<stdlib.h>
 #include<cstdio>
