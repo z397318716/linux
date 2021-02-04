@@ -18,7 +18,7 @@ int main(int argc, char *argv[]){
   TcpSocket lst_sock;
   CHECK_RET(lst_sock.Socket());
   CHECK_RET(lst_sock.Bind(ip, port));
-  CHECK_RET(lst_sock.Listen());
+  CHECK_RET(lst_sock.Listen()); // 开始监听
 
   while(1){
     TcpSocket cli_sock;
@@ -31,6 +31,7 @@ int main(int argc, char *argv[]){
       // 获取新连接失败, 重新获取
       continue;
     }
+    printf("new connect:[%s:%d]\n", cli_ip.c_str(), cli_port);
     std::string buf;
     if(cli_sock.Recv(&buf) == false){
       cli_sock.Close();// 通信套接字接收数据出错, 关闭的是通信套接字

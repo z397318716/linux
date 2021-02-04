@@ -26,7 +26,6 @@ class TcpSocket{
     TcpSocket():_sockfd(-1){
       
     }
-    ~TcpSocket(){}
     // 创建套接字
     bool Socket(){
       _sockfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
@@ -98,6 +97,7 @@ class TcpSocket{
       if(port != nullptr){
         *port = ntohs(addr.sin_port);
       }
+      return true;
     }
     // 发送数据
     bool Send(const std::string &data){
