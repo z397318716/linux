@@ -3,18 +3,23 @@
 #include<iostream>
 #include<stdlib.h>
 #include"tcp_socket.hpp"
+#include<signal.h>
 
 // 创建套接字
 // 绑定地址信息---推荐操作系统自己绑定
 // 向服务端发起请求
 // 循环收发数据
+void sigcb(int signo){
 
+  printf("连接断开, 继续发送数据触发异常SIGPIPE信号\n");
+}
 int main(int argc, char *argv[]){
 
   if(argc != 3){
     printf("em:./tcp_cli 192.168.132.122 9000--服务器绑定的地址\n");
     return -1;
   }
+  signal(SIGPIPE, sigcb);
   std::string ip = argv[1];
   //uint16_t port = std::stoi(argv[2]);
   uint16_t port = atoi(argv[2]);

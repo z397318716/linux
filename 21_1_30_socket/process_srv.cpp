@@ -51,7 +51,7 @@ int main(int argc, char *argv[]){
         // 因为父子进程代码共享,数据独有, 所以子进程可以直接对 cli_sock 进行操作
         if(cli_sock.Recv(&buf) == false){
           cli_sock.Close();// 通信套接字接收数据出错, 关闭的是通信套接字
-          continue;
+          exit(0);
         }
         printf("client:[%s:%d] say:%s\n", &cli_ip[0], cli_port, &buf[0]);
         std::cout << "server say: ";
@@ -61,7 +61,7 @@ int main(int argc, char *argv[]){
 
         if(cli_sock.Send(buf) == false){
           cli_sock.Close();
-          continue;
+          exit(0);
         }
       }
       cli_sock.Close();

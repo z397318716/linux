@@ -129,6 +129,15 @@ class TcpSocket{
       close(_sockfd);
       _sockfd = -1;
     }
+    // 为多线程的tcp准备的函数, 因为线程的回调函数不能直接对主进程的数据进行操作, 所以
+    // 需要把需要的数据以参数的形式传递, 但是不能直接把对象以引用方式传递,
+    // 考虑到只是用 _sockfd , 所以做这两个函数获取_sockfd
+    int GetFd(){
+      return _sockfd;
+    }
+    void SetFd(int fd){
+      _sockfd = fd;
+    }
   private:
     int _sockfd;
 };
